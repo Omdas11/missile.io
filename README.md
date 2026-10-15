@@ -17,18 +17,21 @@ No build step, no dependencies — just open `index.html` or serve the folder.
 
 The rocket **always flies forward** — like the real 2 Minutes in Space, holding a turn key carves a circular path, and releasing it sends you off on the tangent in a straight line. Homing missiles chase you: out-turn them, don't outrun them.
 
-- **Goal:** survive 2:00. The timer counts down; distance is your score.
+- **Goal:** survive 2:00. The timer counts down.
+- **Score:** collect the glowing **cores** laid in arcs ahead of your flight path (+10 each, streak bonus every 8 in a row without taking damage).
 - **Difficulty:** pick EASY, NORMAL, or HARD on the menu. You have 5 hearts — except HARD, where a single hit ends the run.
-- **Dodge:** asteroids, homing missiles (watch for the INCOMING warning — and when two missiles cross paths they blow each other up), UFO bolts, proximity mines, and black holes that pull you in.
+- **Dodge:** asteroids, homing missiles (watch for the INCOMING warning — missiles that cross paths blow each other up, and luring one into an asteroid bursts them both), UFO bolts, proximity mines, and black holes that pull you in.
 - **Grab pickups:** shield · heart (+1) · clock (slow-mo), each with its own icon.
+- **Graphics settings:** LOW / MED / HIGH on the menu (render scale, glow effects, starfield density, particles) plus an FPS meter toggle, for weaker machines.
 - Difficulty ramps the whole flight — the last 10 seconds are a missile storm.
-- Best distance and best time are saved locally in the browser.
+- Best score and best time are saved locally in the browser.
 
 ## Files
 
 - `index.html` — page, HUD, menus
 - `style.css` — all styling
-- `game.js` — the whole game (canvas rendering, synthesized WebAudio SFX, no assets)
+- `game.js` — the whole game (canvas rendering, synthesized WebAudio SFX)
+- `assets/` — ship, UFO and meteor sprites from [Kenney's Space Shooter](https://kenney.nl/assets/space-shooter) (CC0 — credited anyway)
 
 ## Deploy
 

@@ -51,13 +51,23 @@
         <div><b>TOUCH</b> hold left / right half of the screen</div>
         <div><b>KEYS</b> &#8592; &#8594; or A / D &nbsp;·&nbsp; <b>PAUSE</b> P &nbsp;·&nbsp; <b>MUTE</b> M</div>
       </div>
-      <p class="tip">Homing missiles chase you — out-turn them, don't outrun them. Grab the <b>shield</b>, <b>heart</b> and <b>clock</b> pickups. The last 10 seconds are a missile storm.</p>
+      <p class="tip">Collect the glowing <b>cores</b> for score — chain them for streak bonuses. Homing missiles chase you: out-turn them, or lure them into asteroids.</p>
       <div class="diff-row">
         <button class="diff-btn" data-diff="easy">EASY</button>
         <button class="diff-btn" data-diff="normal">NORMAL</button>
         <button class="diff-btn" data-diff="hard">HARD</button>
       </div>
       <p class="diff-note" id="diff-note"></p>
+      <div class="set-row"><span class="set-label">GRAPHICS</span>
+        <div class="seg" id="seg-q">
+          <button data-q="low">LOW</button><button data-q="med">MED</button><button data-q="high">HIGH</button>
+        </div>
+      </div>
+      <div class="set-row"><span class="set-label">FPS METER</span>
+        <div class="seg" id="seg-fps">
+          <button data-fps="0">OFF</button><button data-fps="1">ON</button>
+        </div>
+      </div>
       <button id="btn-start" class="big-btn">LAUNCH</button>
       <div id="menu-best" class="best-line"></div>
     </div>
@@ -77,11 +87,11 @@
     <div class="panel">
       <h2 class="dead">SHOT DOWN</h2>
       <div class="stats">
-        <div><span>TIME</span><b id="final-score">0:00</b></div>
-        <div><span>DISTANCE</span><b id="final-best">0 m</b></div>
-        <div><span>BEST DISTANCE</span><b id="final-wave">0 m</b></div>
-        <div><span>DODGED</span><b id="final-kills">0</b></div>
-        <div><span>PICKUPS</span><b id="final-downed">0</b></div>
+        <div><span>SCORE</span><b id="final-score">0</b></div>
+        <div><span>BEST</span><b id="final-best">0</b></div>
+        <div><span>TIME</span><b id="final-wave">0:00</b></div>
+        <div><span>CORES</span><b id="final-kills">0</b></div>
+        <div><span>DODGED</span><b id="final-downed">0</b></div>
       </div>
       <div id="newbest" class="hidden">NEW BEST!</div>
       <button id="btn-retry" class="big-btn">FLY AGAIN</button>

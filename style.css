@@ -44,7 +44,16 @@ body {
 }
 .diff-btn.selected { background:linear-gradient(180deg,#7ee2a8,#37c978); color:#06101f; border-color:transparent; }
 .diff-btn[data-diff="hard"].selected { background:linear-gradient(180deg,#ff9a8a,#ff5a5a); }
-.diff-note { font-size:12px; opacity:.75; margin-bottom:18px; letter-spacing:1px; min-height:16px; }
+.diff-note { font-size:12px; opacity:.75; margin-bottom:14px; letter-spacing:1px; min-height:16px; }
+
+.set-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:8px 0; }
+.set-label { font-size:12px; letter-spacing:3px; opacity:.7; }
+.seg { display:flex; gap:6px; }
+.seg button {
+  padding:8px 14px; font-size:12px; font-weight:800; letter-spacing:1px; border-radius:8px;
+  border:1px solid rgba(160,190,255,.35); background:rgba(255,255,255,.05); color:#cfe0ff; cursor:pointer;
+}
+.seg button.selected { background:linear-gradient(180deg,#8fb8ff,#5a8fe8); color:#06101f; border-color:transparent; }
 #buffs { display:flex; gap:6px; margin-top:8px; }
 .buff {
   font-size:11px; font-weight:800; letter-spacing:1px; padding:3px 8px; border-radius:20px;
