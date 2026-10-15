@@ -13,7 +13,7 @@ body {
 #hud { position:absolute; inset:0; pointer-events:none; z-index:5; }
 #hud-left { position:absolute; top:14px; left:16px; }
 #score { font-size:34px; font-weight:800; letter-spacing:1px; text-shadow:0 2px 12px rgba(0,0,0,.7); font-variant-numeric:tabular-nums; }
-#best { font-size:12px; opacity:.65; letter-spacing:2px; margin-top:2px; }
+#best { font-size:12px; opacity:.65; letter-spacing:2px; margin-top:6px; line-height:1.2; }
 #hud-center { position:absolute; top:14px; left:50%; transform:translateX(-50%); text-align:center; }
 #timer { font-size:30px; font-weight:900; letter-spacing:3px; text-shadow:0 2px 12px rgba(0,0,0,.7); font-variant-numeric:tabular-nums; }
 #timer.danger { color:#ff6b6b; animation:blink .5s steps(2) infinite; }
