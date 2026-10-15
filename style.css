@@ -56,6 +56,18 @@ body {
   text-shadow:0 0 18px rgba(255,180,60,.8);
 }
 
+/* touch steering zones */
+#steerhint { position:absolute; inset:0; z-index:4; pointer-events:none; }
+.steer-zone {
+  position:absolute; bottom:12%; font-size:44px; color:rgba(160,190,255,.35);
+  width:80px; height:80px; display:flex; align-items:center; justify-content:center;
+  border:2px solid rgba(160,190,255,.25); border-radius:50%;
+  animation:steerpulse 1.6s ease-in-out infinite;
+}
+.steer-zone.left { left:8%; } .steer-zone.right { right:8%; }
+@keyframes steerpulse { 50% { transform:scale(1.12); color:rgba(160,190,255,.6); } }
+@media (pointer:fine) { #steerhint { display:none; } }
+
 /* ---------- Overlays ---------- */
 .overlay {
   position:absolute; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;

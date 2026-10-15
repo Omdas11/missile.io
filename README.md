@@ -10,9 +10,12 @@ No build step, no dependencies — just open `index.html` or serve the folder.
 
 | Input | Action |
 |---|---|
-| Mouse / touch drag / WASD · arrows | Steer your rocket |
+| &#8592; &#8594; or A / D | Hold to turn (release to fly straight) |
+| Touch | Hold left / right half of the screen to turn |
 | P or Esc | Pause |
 | M | Mute |
+
+The rocket **always flies forward** — like the real 2 Minutes in Space, holding a turn key carves a circular path, and releasing it sends you off on the tangent in a straight line. Homing missiles chase you: out-turn them, don't outrun them.
 
 - **Goal:** survive 2:00. The timer counts down; distance is your score.
 - **Dodge:** asteroids, homing missiles (watch for the INCOMING warning), UFO bolts, proximity mines, and black holes that pull you in.
