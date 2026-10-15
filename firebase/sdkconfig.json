@@ -1,0 +1,17 @@
+{
+  "status": "success",
+  "result": {
+    "fileName": "firebase-js-config.json",
+    "fileContents": "{\n  \"projectId\": \"studio-5006354319-33e06\",\n  \"appId\": \"1:573713967819:web:fe698d331bea09dcb9094e\",\n  \"storageBucket\": \"studio-5006354319-33e06.firebasestorage.app\",\n  \"apiKey\": \"AIzaSyAKkVod_ddUbgaNmD9mVX3YrgLdAwgtYCM\",\n  \"authDomain\": \"studio-5006354319-33e06.firebaseapp.com\",\n  \"messagingSenderId\": \"573713967819\",\n  \"projectNumber\": \"573713967819\",\n  \"version\": \"2\"\n}",
+    "sdkConfig": {
+      "projectId": "studio-5006354319-33e06",
+      "appId": "1:573713967819:web:fe698d331bea09dcb9094e",
+      "storageBucket": "studio-5006354319-33e06.firebasestorage.app",
+      "apiKey": "AIzaSyAKkVod_ddUbgaNmD9mVX3YrgLdAwgtYCM",
+      "authDomain": "studio-5006354319-33e06.firebaseapp.com",
+      "messagingSenderId": "573713967819",
+      "projectNumber": "573713967819",
+      "version": "2"
+    }
+  }
+}

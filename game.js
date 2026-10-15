@@ -1142,35 +1142,49 @@ function toMenu() {
   loadBoard();
 }
 
-/* ================= backend: Google sign-in + leaderboard ================= */
-const AW = { ready: false, user: null, board: [], submitting: false };
-const AW_ENDPOINT = 'https://sgp.cloud.appwrite.io/v1';
-const AW_PROJECT = '69a3e59300172d6a19cf';
-const AW_DB = 'missileio', AW_TABLE = 'leaderboard';
-const GAME_URL = 'https://omdas11.github.io/missile.io/';
+/* ================= backend: Firebase Google sign-in + leaderboard ================= */
+const FB = { ready: false, tried: false, user: null, board: [], submitting: false };
+const FB_CONFIG = {
+  apiKey: 'AIzaSyAKkVod_ddUbgaNmD9mVX3YrgLdAwgtYCM',
+  authDomain: 'studio-5006354319-33e06.firebaseapp.com',
+  projectId: 'studio-5006354319-33e06',
+  storageBucket: 'studio-5006354319-33e06.firebasestorage.app',
+  messagingSenderId: '573713967819',
+  appId: '1:573713967819:web:fe698d331bea09dcb9094e',
+};
+const FB_COLL = 'leaderboard';
 
 function initBackend() {
-  AW.tried = true;
-  if (AW.ready || !window.Appwrite) { paintAuth(); loadBoard(); return; }
+  FB.tried = true;
+  if (FB.ready || !window.Firebase) { paintAuth(); loadBoard(); return; }
   try {
-    const { Client, Account, TablesDB, Query, ID } = window.Appwrite;
-    AW.client = new Client().setEndpoint(AW_ENDPOINT).setProject(AW_PROJECT);
-    AW.account = new Account(AW.client);
-    AW.db = new TablesDB(AW.client);
-    AW.Query = Query; AW.ID = ID;
-    AW.ready = true;
-  } catch (e) { AW.ready = false; }
-  if (location.search.includes('auth=fail')) toast('Google sign-in failed — try again');
-  refreshAuth();
+    const F = window.Firebase;
+    FB.F = F;
+    FB.app = F.initializeApp(FB_CONFIG);
+    FB.auth = F.getAuth(FB.app);
+    FB.db = F.getFirestore(FB.app);
+    FB.ready = true;
+    // surface redirect errors (provider not enabled, unauthorized domain, …)
+    F.getRedirectResult(FB.auth).catch(err => {
+      if (err && err.code && err.code !== 'auth/no-auth-event')
+        toast('Google sign-in failed: ' + friendlyAuthError(err.code));
+    });
+    F.onAuthStateChanged(FB.auth, user => {
+      FB.user = user;
+      paintAuth(); loadBoard();
+    });
+  } catch (e) { FB.ready = false; }
+  paintAuth(); loadBoard();
 }
 
-async function refreshAuth() {
-  if (AW.ready) {
-    try { AW.user = await AW.account.get(); }
-    catch (e) { AW.user = null; }
-  }
-  paintAuth();
-  loadBoard();
+function friendlyAuthError(code) {
+  return {
+    'auth/operation-not-allowed': 'Google sign-in is not enabled yet',
+    'auth/unauthorized-domain': 'this domain is not authorized',
+    'auth/popup-blocked': 'popup was blocked',
+    'auth/cancelled-popup-request': 'sign-in was cancelled',
+    'auth/network-request-failed': 'network error — check connection',
+  }[code] || 'try again';
 }
 
 function esc(s) {
@@ -1179,15 +1193,19 @@ function esc(s) {
 
 const G_LOGO = '<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.3-2.3H12v4.5h6.5c-.1 1.1-.8 2.7-2.4 3.8l-.1.1 3.5 2.7.1.1c2.2-2 3.9-5 3.9-8.9z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.8-2.9c-1 .7-2.4 1.2-4.1 1.2-3.1 0-5.8-2.1-6.8-5l-.1.1-3.7 2.9v.1C3.5 21.3 7.4 24 12 24z"/><path fill="#FBBC05" d="M5.2 14.4c-.2-.7-.4-1.5-.4-2.4s.1-1.7.4-2.4l-.1-.1-3.7-2.9-.1.1C.5 8.2 0 10 0 12s.5 3.8 1.3 5.4l3.9-3z"/><path fill="#EA4335" d="M12 4.7c1.8 0 3 .8 3.7 1.4l3.3-3.2C17.9 1.1 15.2 0 12 0 7.4 0 3.5 2.7 1.3 6.6l3.9 3c1-2.9 3.7-4.9 6.8-4.9z"/></svg>';
 
+function initialsAvatar(name) {
+  const n = encodeURIComponent((name || 'P').trim().charAt(0).toUpperCase() || 'P');
+  return 'https://ui-avatars.com/api/?name=' + n + '&background=243b8f&color=fff&size=96';
+}
+
 function paintAuth() {
   const el = document.getElementById('auth-area');
   if (!el) return;
-  if (!AW.ready) { el.innerHTML = ''; return; }
-  if (AW.user) {
-    const av = AW_ENDPOINT + '/avatars/initials?name=' + encodeURIComponent(AW.user.name || 'P') +
-      '&project=' + AW_PROJECT + '&width=96&height=96';
+  if (!FB.ready) return;
+  if (FB.user) {
     el.innerHTML =
-      '<div class="user-chip"><img src="' + av + '" alt=""><span>' + esc(AW.user.name || 'Pilot') + '</span>' +
+      '<div class="user-chip"><img src="' + esc(FB.user.photoURL || initialsAvatar(FB.user.displayName)) + '" alt=""><span>' +
+      esc(FB.user.displayName || 'Pilot') + '</span>' +
       '<button id="btn-signout" class="mini-btn">Sign out</button></div>';
     document.getElementById('btn-signout').addEventListener('click', signOut);
   } else {
@@ -1197,47 +1215,52 @@ function paintAuth() {
 }
 
 function signInGoogle() {
-  if (!AW.ready) { toast('Leaderboard is offline right now'); return; }
-  AW.account.createOAuth2Session({ provider: 'google', success: GAME_URL, failure: GAME_URL + '?auth=fail' });
+  if (!FB.ready) { toast('Leaderboard is offline right now'); return; }
+  const provider = new FB.F.GoogleAuthProvider();
+  FB.F.signInWithRedirect(FB.auth, provider).catch(err => {
+    toast('Google sign-in failed: ' + friendlyAuthError(err.code));
+  });
 }
 
 async function signOut() {
-  try { await AW.account.deleteSession('current'); } catch (e) {}
-  AW.user = null;
-  paintAuth(); loadBoard();
+  try { await FB.F.signOut(FB.auth); } catch (e) {}
   toast('Signed out');
 }
 
 async function loadBoard() {
   const el = document.getElementById('board-list');
   if (!el) return;
-  if (!AW.ready) {
+  if (!FB.ready) {
     el.innerHTML = '<div class="board-empty">' +
-      (AW.tried ? 'Leaderboard is offline — check your connection.' : 'Loading…') + '</div>';
+      (FB.tried ? 'Leaderboard is offline — check your connection.' : 'Loading…') + '</div>';
     return;
   }
   try {
-    const res = await AW.db.listRows(AW_DB, AW_TABLE, [AW.Query.orderDesc('score'), AW.Query.limit(60)]);
+    const snap = await FB.F.getDocs(FB.F.query(
+      FB.F.collection(FB.db, FB_COLL),
+      FB.F.orderBy('score', 'desc'),
+      FB.F.limit(60)));
     const best = new Map();
-    for (const r of res.rows || []) {
+    snap.forEach(doc => {
+      const r = doc.data();
       const cur = best.get(r.userId);
       if (!cur || r.score > cur.score) best.set(r.userId, r);
-    }
-    AW.board = [...best.values()].sort((a, b) => b.score - a.score).slice(0, 10);
-  } catch (e) { AW.board = []; }
+    });
+    FB.board = [...best.values()].sort((a, b) => b.score - a.score).slice(0, 10);
+  } catch (e) { FB.board = []; }
   paintBoard();
 }
 
 function paintBoard() {
   const el = document.getElementById('board-list');
-  if (!AW.board.length) {
+  if (!FB.board.length) {
     el.innerHTML = '<div class="board-empty">' +
-      (AW.user ? 'No scores yet — be the first pilot on the board!' : 'Sign in with Google to enter the leaderboard.') +
+      (FB.user ? 'No scores yet — be the first pilot on the board!' : 'Sign in with Google to enter the leaderboard.') +
       '</div>';
     return;
   }
-  el.innerHTML = AW.board.map((r, i) => {
-    const me = AW.user && r.userId === AW.user.$id;
+  el.innerHTML = FB.board.map((r, i) => {
+    const me = FB.user && r.userId === FB.user.uid;
     const rc = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
     return '<div class="board-row' + (me ? ' me' : '') + '">' +
       '<span class="rank ' + rc + '">' + (i + 1) + '</span>' +
@@ -1249,31 +1272,30 @@ function paintBoard() {
 }
 
 async function submitScore() {
-  if (!AW.ready || !AW.user || S.score <= 0 || AW.submitting) return 'skip';
-  AW.submitting = true;
+  if (!FB.ready || !FB.user || S.score <= 0 || FB.submitting) return 'skip';
+  FB.submitting = true;
   try {
-    await AW.db.createRow(AW_DB, AW_TABLE, AW.ID.unique(), {
-      userId: AW.user.$id,
-      name: AW.user.name || 'Pilot',
-      avatar: AW_ENDPOINT + '/avatars/initials?name=' + encodeURIComponent(AW.user.name || 'P') +
-        '&project=' + AW_PROJECT + '&width=96&height=96',
+    await FB.F.addDoc(FB.F.collection(FB.db, FB_COLL), {
+      userId: FB.user.uid,
+      name: FB.user.displayName || 'Pilot',
+      avatar: FB.user.photoURL || '',
       score: S.score,
       difficulty: S.diff,
       duration: Math.round(Math.min(S.t, DURATION) * 10) / 10,
-      createdAt: new Date().toISOString(),
+      createdAt: FB.F.serverTimestamp(),
     });
     await loadBoard();
-    const rank = AW.board.findIndex(r => r.userId === AW.user.$id);
+    const rank = FB.board.findIndex(r => r.userId === FB.user.uid);
     return rank >= 0 ? rank + 1 : null;
   } catch (e) { return 'error'; }
-  finally { AW.submitting = false; }
+  finally { FB.submitting = false; }
 }
 
 async function handleSubmit() {
   const rankEl = document.getElementById('rank-line');
   rankEl.classList.add('hidden');
-  if (!AW.ready) return;
-  if (!AW.user) {
+  if (!FB.ready) return;
+  if (!FB.user) {
     rankEl.textContent = 'Sign in with Google to enter the leaderboard';
     rankEl.classList.remove('hidden');
     return;

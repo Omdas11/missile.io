@@ -109,8 +109,10 @@
 </div>
 <script src="game.js"></script>
 <script type="module">
-import { Client, Account, TablesDB, Query, ID } from 'https://cdn.jsdelivr.net/npm/appwrite@29.0.0/dist/esm/sdk.js';
-window.Appwrite = { Client, Account, TablesDB, Query, ID };
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
+import { getFirestore, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js';
+window.Firebase = { initializeApp, getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, getFirestore, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp };
 if (typeof initBackend === 'function') initBackend();
 </script>
 </body>
