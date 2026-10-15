@@ -1091,6 +1091,23 @@ function startRun() {
   showSteerHint(true);
   setTimeout(() => showSteerHint(false), 6000);
   if (engineGain) engineGain.gain.value = 0.03;
+  startOnlineRun();
+}
+
+// Registers this run server-side so the leaderboard can validate the score.
+// Fire-and-forget: if it fails (offline), the run simply stays local-only.
+async function startOnlineRun() {
+  FB.runId = null;
+  if (!FB.ready || !FB.user) return;
+  try {
+    const ref = FB.F.doc(FB.F.collection(FB.db, 'runs'));
+    await FB.F.setDoc(ref, {
+      uid: FB.user.uid,
+      startedAt: FB.F.serverTimestamp(),
+      difficulty: S.diff,
+    });
+    FB.runId = ref.id;
+  } catch (e) { FB.runId = null; }
 }
 function fmtTime(s) {
   s = Math.floor(s);
@@ -1272,11 +1289,13 @@ function paintBoard() {
 }
 
 async function submitScore() {
-  if (!FB.ready || !FB.user || S.score <= 0 || FB.submitting) return 'skip';
+  if (!FB.ready || !FB.user || !FB.runId || S.score <= 0 || FB.submitting) return 'skip';
   FB.submitting = true;
   try {
-    await FB.F.addDoc(FB.F.collection(FB.db, FB_COLL), {
+    // Single-use doc id == run id: each run can only ever submit once.
+    await FB.F.setDoc(FB.F.doc(FB.db, FB_COLL, FB.runId), {
       userId: FB.user.uid,
+      runId: FB.runId,
       name: FB.user.displayName || 'Pilot',
       avatar: FB.user.photoURL || '',
       score: S.score,
@@ -1297,6 +1316,11 @@ async function handleSubmit() {
   if (!FB.ready) return;
   if (!FB.user) {
     rankEl.textContent = 'Sign in with Google to enter the leaderboard';
+    rankEl.classList.remove('hidden');
+    return;
+  }
+  if (!FB.runId) {
+    rankEl.textContent = 'Online run could not start — score kept local';
     rankEl.classList.remove('hidden');
     return;
   }

@@ -1,15 +1,33 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /leaderboard/{doc} {
-      // Anyone can read the leaderboard.
+
+    // One doc per run, created when a run starts. startedAt is server-set,
+    // so nobody can backdate a run to fake a longer play time.
+    match /runs/{runId} {
       allow read: if true;
-      // Only signed-in pilots can submit, only for themselves,
-      // score must be a non-negative number.
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.startedAt == request.time
+        && request.resource.data.difficulty is string;
+      allow update, delete: if false;
+    }
+
+    // Leaderboard entry, single-use per run (doc id == run id, no updates).
+    // The score must be earnable in the wall-clock time since the run
+    // started: at most 100 pts/sec (above the game's theoretical max of
+    // ~89 pts/sec), so faking a score takes as long as earning it.
+    match /leaderboard/{runId} {
+      allow read: if true;
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
-        && request.resource.data.score is number
-        && request.resource.data.score >= 0;
+        && request.resource.data.runId == runId
+        && request.resource.data.score is int
+        && request.resource.data.score >= 0
+        && exists(/databases/$(database)/documents/runs/$(runId))
+        && get(/databases/$(database)/documents/runs/$(runId)).data.uid == request.auth.uid
+        && duration.value(request.resource.data.score, 's')
+           <= (request.time - get(/databases/$(database)/documents/runs/$(runId)).data.startedAt) * 100.0;
       allow update, delete: if false;
     }
   }
