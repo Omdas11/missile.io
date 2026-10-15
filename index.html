@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="description" content="missile.io — a fast HTML5 arcade game. Dodge the homing missile swarm, shoot back, survive the waves." />
+<title>missile.io — dodge the swarm</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 L22 14 L22 22 L16 19 L10 22 L10 14 Z' fill='%23ff5a5a'/%3E%3Ccircle cx='16' cy='25' r='3' fill='%23ffb02e'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="hud-left">
+      <div id="score">0 m</div>
+      <div id="best">BEST 0 m</div>
+    </div>
+    <div id="hud-center">
+      <div id="timer">2:00</div>
+      <div id="incoming" class="hidden">INCOMING</div>
+    </div>
+    <div id="hud-right">
+      <button id="btn-mute" class="icon-btn" title="Mute (M)">&#9836;</button>
+      <button id="btn-pause" class="icon-btn" title="Pause (P)">II</button>
+    </div>
+    <div id="hull-wrap">
+      <div id="hull-label">HULL</div>
+      <div id="hull-bar"><div id="hull-fill"></div></div>
+      <div id="buffs"></div>
+    </div>
+  </div>
+
+  <div id="wavebanner" class="hidden"></div>
+  <div id="combo" class="hidden"></div>
+
+  <!-- Main menu -->
+  <div id="menu" class="overlay">
+    <div class="panel">
+      <h1 class="logo">MISSILE<span>.IO</span></h1>
+      <p class="tagline">Survive 2 minutes in space. That's it. That's the game.</p>
+      <div class="how">
+        <div><b>STEER</b> mouse / touch / WASD</div>
+        <div><b>DODGE</b> asteroids, missiles, mines, UFOs</div>
+        <div><b>SURVIVE</b> the full 2:00 to win</div>
+      </div>
+      <p class="tip">Tip: grab <b>S</b> shields and <b>+</b> repairs. The last 10 seconds are a missile storm.</p>
+      <button id="btn-start" class="big-btn">LAUNCH</button>
+      <div id="menu-best" class="best-line"></div>
+    </div>
+  </div>
+
+  <!-- Pause -->
+  <div id="paused" class="overlay hidden">
+    <div class="panel">
+      <h2>PAUSED</h2>
+      <button id="btn-resume" class="big-btn">RESUME</button>
+      <button id="btn-quit" class="ghost-btn">QUIT TO MENU</button>
+    </div>
+  </div>
+
+  <!-- Game over -->
+  <div id="over" class="overlay hidden">
+    <div class="panel">
+      <h2 class="dead">SHOT DOWN</h2>
+      <div class="stats">
+        <div><span>TIME</span><b id="final-score">0:00</b></div>
+        <div><span>DISTANCE</span><b id="final-best">0 m</b></div>
+        <div><span>BEST DISTANCE</span><b id="final-wave">0 m</b></div>
+        <div><span>DODGED</span><b id="final-kills">0</b></div>
+        <div><span>PICKUPS</span><b id="final-downed">0</b></div>
+      </div>
+      <div id="newbest" class="hidden">NEW BEST!</div>
+      <button id="btn-retry" class="big-btn">FLY AGAIN</button>
+      <button id="btn-menu" class="ghost-btn">MENU</button>
+    </div>
+  </div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
