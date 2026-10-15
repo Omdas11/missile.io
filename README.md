@@ -18,8 +18,9 @@ No build step, no dependencies — just open `index.html` or serve the folder.
 The rocket **always flies forward** — like the real 2 Minutes in Space, holding a turn key carves a circular path, and releasing it sends you off on the tangent in a straight line. Homing missiles chase you: out-turn them, don't outrun them.
 
 - **Goal:** survive 2:00. The timer counts down; distance is your score.
-- **Dodge:** asteroids, homing missiles (watch for the INCOMING warning), UFO bolts, proximity mines, and black holes that pull you in.
-- **Grab pickups:** **S** shield · **+** repair · **T** slow-mo.
+- **Difficulty:** pick EASY, NORMAL, or HARD on the menu. You have 5 hearts — except HARD, where a single hit ends the run.
+- **Dodge:** asteroids, homing missiles (watch for the INCOMING warning — and when two missiles cross paths they blow each other up), UFO bolts, proximity mines, and black holes that pull you in.
+- **Grab pickups:** shield · heart (+1) · clock (slow-mo), each with its own icon.
 - Difficulty ramps the whole flight — the last 10 seconds are a missile storm.
 - Best distance and best time are saved locally in the browser.
 

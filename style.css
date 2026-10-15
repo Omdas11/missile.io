@@ -30,9 +30,21 @@ body {
 }
 .icon-btn:active { transform:scale(.92); }
 #hull-wrap { position:absolute; left:16px; bottom:16px; width:min(240px, 40vw); }
-#hull-label { font-size:11px; letter-spacing:3px; opacity:.7; margin-bottom:4px; }
-#hull-bar { height:10px; border-radius:6px; background:rgba(255,255,255,.12); overflow:hidden; border:1px solid rgba(255,255,255,.18); }
-#hull-fill { height:100%; width:100%; border-radius:6px; background:linear-gradient(90deg,#37e08b,#b6f34c); transition:width .2s, background .3s; }
+#hearts { display:flex; gap:6px; margin-bottom:8px; }
+.heart svg { width:26px; height:26px; display:block; }
+.heart path { fill:rgba(255,255,255,.10); stroke:rgba(255,120,140,.45); stroke-width:1.5; }
+.heart.on path { fill:#ff5a7a; stroke:#ff9ab5; filter:drop-shadow(0 0 6px rgba(255,90,122,.8)); }
+.heart.on { animation:heartbeat 1s ease-in-out infinite; }
+@keyframes heartbeat { 50% { transform:scale(1.14); } }
+
+.diff-row { display:flex; gap:8px; margin:2px 0 8px; }
+.diff-btn {
+  flex:1; padding:11px 0; font-size:13px; font-weight:800; letter-spacing:2px; border-radius:10px;
+  border:1px solid rgba(160,190,255,.35); background:rgba(255,255,255,.05); color:#cfe0ff; cursor:pointer;
+}
+.diff-btn.selected { background:linear-gradient(180deg,#7ee2a8,#37c978); color:#06101f; border-color:transparent; }
+.diff-btn[data-diff="hard"].selected { background:linear-gradient(180deg,#ff9a8a,#ff5a5a); }
+.diff-note { font-size:12px; opacity:.75; margin-bottom:18px; letter-spacing:1px; min-height:16px; }
 #buffs { display:flex; gap:6px; margin-top:8px; }
 .buff {
   font-size:11px; font-weight:800; letter-spacing:1px; padding:3px 8px; border-radius:20px;

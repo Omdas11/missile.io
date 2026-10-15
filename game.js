@@ -41,11 +41,24 @@ const S = {
   bannerAt: 0,
   camX: 0, camY: 0,          // camera top-left in world coords
 };
+/* ---------- difficulty ---------- */
+const DIFFS = {
+  easy:   { hearts: 5, spawnMul: 1.6, mSpeed: 0.85, mTurn: 0.8, fireMul: 1.5, shots: 2,
+            note: '5 hearts · calmer skies' },
+  normal: { hearts: 5, spawnMul: 1.0, mSpeed: 1.0,  mTurn: 1.0, fireMul: 1.0, shots: 3,
+            note: '5 hearts · the real deal' },
+  hard:   { hearts: 1, spawnMul: 0.7, mSpeed: 1.12, mTurn: 1.3, fireMul: 0.7, shots: 4,
+            note: '1 heart · one hit and you are space dust' },
+};
+S.diff = localStorage.getItem('missileio_diff') || 'normal';
+if (!DIFFS[S.diff]) S.diff = 'normal';
+const D = () => DIFFS[S.diff];
+
 const viewR = () => hyp(W, H) / 2 + 60;     // spawn/despawn radius
 
 const P = {              // player = rocket, always moving forward
   x: 0, y: 0, heading: 0, speed: 290, r: 13,
-  hull: 100, maxHull: 100,
+  hearts: 5, maxHearts: 5,
   alive: true, shield: 0, invuln: 0, flame: 0,
 };
 const fwdX = () => Math.sin(P.heading);
@@ -156,6 +169,7 @@ function explode(x, y, scale = 1, big = false) {
       rand(1.5, big ? 5 : 3.5) * scale, Math.random() < 0.55 ? 'fire' : (Math.random() < 0.5 ? 'spark' : 'smoke'));
   }
   puff(x, y, 0, 0, 0.14, (big ? 46 : 26) * scale, 'flash');
+  puff(x, y, 0, 0, big ? 0.5 : 0.32, (big ? 70 : 40) * scale, 'ring');   // shockwave
   S.shake = Math.min(S.shake + (big ? 14 : 6) * scale, 22);
   big ? sfx.bigBoom() : sfx.boom();
 }
@@ -187,24 +201,24 @@ function damagePlayer(amount, sx, sy) {
     tone(300, 0.15, 'square', 0.09, 150);
     return;
   }
-  P.hull -= amount;
-  P.invuln = 0.8;
+  P.hearts -= 1;
+  P.invuln = 1.0;
   explode(sx, sy, 0.7);
   sfx.hit();
   S.hitStop = 0.05; S.flash = 0.25;
-  if (P.hull <= 0) {
-    P.hull = 0; P.alive = false;
+  if (P.hearts <= 0) {
+    P.hearts = 0; P.alive = false;
     explode(P.x, P.y, 1.7, true);
     setTimeout(() => endRun(false), 1000);
   }
-  updateHUD();
+  renderHearts();
 }
-function updateHUD() {
-  const f = document.getElementById('hull-fill');
-  const pct = clamp(P.hull / P.maxHull * 100, 0, 100);
-  f.style.width = pct + '%';
-  f.style.background = pct > 55 ? 'linear-gradient(90deg,#37e08b,#b6f34c)'
-    : pct > 25 ? 'linear-gradient(90deg,#ffb02e,#ffd76a)' : 'linear-gradient(90deg,#ff5a5a,#ff8a5a)';
+const HEART_SVG = '<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+function renderHearts() {
+  let html = '';
+  for (let i = 0; i < P.maxHearts; i++)
+    html += '<span class="heart' + (i < P.hearts ? ' on' : '') + '">' + HEART_SVG + '</span>';
+  document.getElementById('hearts').innerHTML = html;
   document.getElementById('score').textContent = Math.floor(S.dist) + ' m';
 }
 
@@ -216,7 +230,8 @@ function resetRun() {
   asteroids = []; missiles = []; bolts = []; mines = []; ufos = []; holes = [];
   pickups = []; parts = []; floaters = [];
   P.x = 0; P.y = 0; P.heading = 0; P.speed = 290;
-  P.hull = P.maxHull; P.alive = true; P.shield = 0; P.invuln = 1.5;
+  P.maxHearts = D().hearts; P.hearts = P.maxHearts;
+  P.alive = true; P.shield = 0; P.invuln = 1.5;
   S.camX = -W / 2; S.camY = -H / 2;
   pointers.clear(); steer.keyL = steer.keyR = false; recomputeSteer();
   spawnT.asteroid = 0.5; spawnT.missile = 9; spawnT.ufo = 16;
@@ -239,21 +254,21 @@ function spawnDirector(dt) {
 
   if (spawnT.asteroid <= 0) {
     const p = ringPoint(); spawnAsteroid(p.x, p.y);
-    spawnT.asteroid = lerp(1.0, 0.3, d) * rand(0.6, 1.3);
+    spawnT.asteroid = lerp(1.0, 0.3, d) * D().spawnMul * rand(0.6, 1.3);
     if (d > 0.5 && Math.random() < 0.45) { const q = ringPoint(); spawnAsteroid(q.x, q.y); }
   }
   if (t > 12 && spawnT.missile <= 0) {
     const n = t > 100 ? 3 : (d > 0.55 ? 2 : 1);
     for (let i = 0; i < n; i++) setTimeout(spawnMissile, i * 400);
-    spawnT.missile = lerp(7, 2.8, d) * rand(0.8, 1.2);
+    spawnT.missile = lerp(7, 2.8, d) * D().spawnMul * rand(0.8, 1.2);
   }
-  if (t > 25 && spawnT.ufo <= 0) { spawnUfo(); spawnT.ufo = lerp(11, 5, d) * rand(0.8, 1.3); }
+  if (t > 25 && spawnT.ufo <= 0) { spawnUfo(); spawnT.ufo = lerp(11, 5, d) * D().spawnMul * rand(0.8, 1.3); }
   if (t > 40 && spawnT.mine <= 0) {
     const n = randi(2, 4);
     for (let i = 0; i < n; i++) { const p = ringPoint(viewR() * rand(0.7, 1)); spawnMine(p.x, p.y); }
-    spawnT.mine = lerp(12, 6, d);
+    spawnT.mine = lerp(12, 6, d) * D().spawnMul;
   }
-  if (t > 60 && spawnT.hole <= 0) { const p = ringPoint(); spawnHole(p.x, p.y); spawnT.hole = rand(15, 24); }
+  if (t > 60 && spawnT.hole <= 0) { const p = ringPoint(); spawnHole(p.x, p.y); spawnT.hole = rand(15, 24) * D().spawnMul; }
   if (spawnT.pickup <= 0) { spawnPickup(); spawnT.pickup = rand(9, 14); }
 
   const marks = [
@@ -276,11 +291,11 @@ function spawnAsteroid(x, y) {
 function spawnMissile() {
   if (S.mode !== 'play' || !P.alive) return;
   const p = ringPoint();
-  const sp = P.speed * rand(0.88, 0.97);          // slightly slower: outrunnable, but they cut corners
+  const sp = P.speed * rand(0.88, 0.97) * D().mSpeed;   // slightly slower: outrunnable, but they cut corners
   const a = Math.atan2(P.y - p.y, P.x - p.x);
   missiles.push({
     x: p.x, y: p.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
-    r: 7, t: 0, life: rand(7, 9), speed: sp, turn: rand(2.6, 3.4) + diff() * 0.8,
+    r: 7, t: 0, life: rand(7, 9), speed: sp, turn: (rand(2.6, 3.4) + diff() * 0.8) * D().mTurn,
     warned: false,
   });
   sfx.launch();
@@ -289,7 +304,7 @@ function spawnUfo() {
   const p = ringPoint();
   ufos.push({
     x: p.x, y: p.y, vx: rand(-1, 1), vy: rand(-1, 1), r: 18,
-    t: 0, fireT: rand(0.8, 1.6), shots: randi(2, 3 + Math.floor(diff() * 3)),
+    t: 0, fireT: rand(0.8, 1.6), shots: randi(2, D().shots + Math.floor(diff() * 2)),
     wob: rand(0, TAU),
   });
   const u = ufos[ufos.length - 1];
@@ -302,7 +317,7 @@ function spawnHole(x, y) { holes.push({ x, y, r: 26, pull: 300, t: 0 }); }
 
 const PK = {
   S: { color: '#6db7ff', name: 'SHIELD' },
-  H: { color: '#7ee2a8', name: 'REPAIR +35' },
+  H: { color: '#ff7d9c', name: 'HEART' },
   T: { color: '#c99aff', name: 'SLOW-MO' },
 };
 function spawnPickup() {
@@ -311,18 +326,20 @@ function spawnPickup() {
   const dx = fwdX(), dy = fwdY();
   const x = P.x + dx * ahead - dy * side, y = P.y + dy * ahead + dx * side;
   const keys = ['S', 'H', 'T'];
-  const k = P.hull < 45 && Math.random() < 0.5 ? 'H' : keys[randi(0, 2)];
+  const k = P.hearts < P.maxHearts && Math.random() < 0.5 ? 'H' : keys[randi(0, 2)];
   pickups.push({ x, y, r: 14, t: 0, kind: k });
 }
 function applyPickup(p) {
   S.pickups++;
   sfx.pickup();
   puff(p.x, p.y, 0, 0, 0.4, 16, 'flash');
-  floater(p.x, p.y - 22, PK[p.kind].name + '!', PK[p.kind].color);
-  if (p.kind === 'S') P.shield = 9;
-  else if (p.kind === 'H') P.hull = Math.min(P.maxHull, P.hull + 35);
-  else if (p.kind === 'T') S.slowmo = 4;
-  refreshBuffs(); updateHUD();
+  if (p.kind === 'S') { P.shield = 9; floater(p.x, p.y - 22, 'SHIELD!', PK.S.color); }
+  else if (p.kind === 'H') {
+    if (P.hearts < P.maxHearts) { P.hearts++; floater(p.x, p.y - 22, '+1 HEART!', PK.H.color); }
+    else floater(p.x, p.y - 22, 'HEARTS FULL', PK.H.color);
+  }
+  else if (p.kind === 'T') { S.slowmo = 4; floater(p.x, p.y - 22, 'SLOW-MO!', PK.T.color); }
+  refreshBuffs(); renderHearts();
 }
 function refreshBuffs() {
   const el = document.getElementById('buffs');
@@ -388,6 +405,25 @@ function updateMissiles(dt) {
       missiles.splice(i, 1);
     }
   }
+  // missile-vs-missile: crossing trajectories detonate each other
+  const doomed = new Set();
+  for (let i = 0; i < missiles.length; i++) {
+    if (doomed.has(i)) continue;
+    for (let j = i + 1; j < missiles.length; j++) {
+      if (doomed.has(j)) continue;
+      const a = missiles[i], b = missiles[j];
+      if (hyp(a.x - b.x, a.y - b.y) < a.r + b.r + 8) {
+        doomed.add(i); doomed.add(j);
+        const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+        explode(cx, cy, 0.9);
+        floater(cx, cy - 18, 'CLASH!', '#ffd76a');
+        S.dodged += 2;
+        break;
+      }
+    }
+  }
+  if (doomed.size) missiles = missiles.filter((_, i) => !doomed.has(i));
+
   document.getElementById('incoming').classList.toggle('hidden', !incoming);
 }
 
@@ -411,7 +447,7 @@ function updateUfos(dt) {
     u.t += dt; u.fireT -= dt;
     u.x += u.vx * dt; u.y += u.vy * dt;
     if (u.fireT <= 0 && u.shots > 0 && P.alive && hyp(P.x - u.x, P.y - u.y) < viewR()) {
-      u.shots--; u.fireT = rand(0.7, 1.3);
+      u.shots--; u.fireT = rand(0.7, 1.3) * D().fireMul;
       // lead the target slightly
       const tof = hyp(P.x - u.x, P.y - u.y) / 320;
       const tx = P.x + fwdX() * P.speed * tof * 0.6, ty = P.y + fwdY() * P.speed * tof * 0.6;
@@ -523,9 +559,12 @@ function drawBackground(dt) {
   g.addColorStop(0, '#04060f'); g.addColorStop(0.55, '#0a1030'); g.addColorStop(1, '#1a0f2e');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
-  ctx.save(); ctx.globalAlpha = 0.5;
-  nebula('#243b8f', W * 0.2, H * 0.25, 190);
-  nebula('#5b2a86', W * 0.85, H * 0.55, 230);
+  // layered nebulae with slight parallax
+  ctx.save(); ctx.globalAlpha = 0.55;
+  nebula('#243b8f', W * 0.2 - S.camX * 0.05 % 300, H * 0.25, 200);
+  nebula('#5b2a86', W * 0.85, H * 0.55 - S.camY * 0.05 % 300, 240);
+  nebula('#0f4c5c', W * 0.6, H * 0.85, 180);
+  nebula('#6a1b3d', W * 0.35, H * 0.65, 150);
   ctx.restore();
 
   // parallax starfield, tiled to screen
@@ -541,6 +580,11 @@ function drawBackground(dt) {
     ctx.fillRect(X, Y, r, r);
   }
   ctx.globalAlpha = 1;
+
+  // vignette
+  const vg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.42, W / 2, H / 2, Math.max(W, H) * 0.75);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(2,3,10,0.55)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
 
   // speed streaks along heading
   if (S.mode === 'play' && P.alive) {
@@ -572,15 +616,24 @@ function drawRocket() {
   ctx.rotate(P.heading);   // heading 0 = up
 
   const fl = 14 + P.flame * 14;
+  ctx.save();
+  ctx.shadowColor = '#ffb02e'; ctx.shadowBlur = 20;
   const fg = ctx.createLinearGradient(0, 14, 0, 14 + fl);
   fg.addColorStop(0, '#fff7cc'); fg.addColorStop(0.4, '#ffb02e'); fg.addColorStop(1, 'rgba(255,90,40,0)');
   ctx.fillStyle = fg;
   ctx.beginPath(); ctx.moveTo(-6, 14); ctx.lineTo(0, 14 + fl); ctx.lineTo(6, 14); ctx.closePath(); ctx.fill();
+  ctx.restore();
 
-  ctx.fillStyle = '#dfe9ff';
+  // hull with metallic gradient + glow
+  ctx.save();
+  ctx.shadowColor = 'rgba(140,180,255,0.8)'; ctx.shadowBlur = 12;
+  const hg = ctx.createLinearGradient(-7, 0, 7, 0);
+  hg.addColorStop(0, '#8fa8d8'); hg.addColorStop(0.5, '#f2f7ff'); hg.addColorStop(1, '#8fa8d8');
+  ctx.fillStyle = hg;
   ctx.beginPath();
   ctx.moveTo(0, -20); ctx.lineTo(7, -4); ctx.lineTo(7, 12); ctx.lineTo(-7, 12); ctx.lineTo(-7, -4);
   ctx.closePath(); ctx.fill();
+  ctx.restore();
   ctx.fillStyle = '#ff5a5a';
   ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(5, -8); ctx.lineTo(-5, -8); ctx.closePath(); ctx.fill();
   ctx.fillStyle = '#274b8f';
@@ -601,23 +654,33 @@ function drawRocket() {
 
 function drawAsteroid(a) {
   ctx.save(); ctx.translate(sx(a.x), sy(a.y)); ctx.rotate(a.rot);
-  ctx.fillStyle = '#5a4a42'; ctx.strokeStyle = '#8a7568'; ctx.lineWidth = 2;
+  const ag = ctx.createRadialGradient(-a.r * 0.3, -a.r * 0.3, a.r * 0.1, 0, 0, a.r * 1.1);
+  ag.addColorStop(0, '#8a7568'); ag.addColorStop(0.55, '#5a4a42'); ag.addColorStop(1, '#33291f');
+  ctx.fillStyle = ag;
+  ctx.strokeStyle = '#a08a76'; ctx.lineWidth = 2;
   ctx.beginPath();
   for (let i = 0; i < a.verts.length; i++) {
     const ang = i / a.verts.length * TAU, rr = a.r * a.verts[i];
     i ? ctx.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr) : ctx.moveTo(Math.cos(ang) * rr, Math.sin(ang) * rr);
   }
   ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  // craters
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.beginPath(); ctx.arc(-a.r * 0.25, -a.r * 0.2, a.r * 0.28, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(a.r * 0.3, a.r * 0.25, a.r * 0.18, 0, TAU); ctx.fill();
+  // rim light (top-left)
+  ctx.strokeStyle = 'rgba(255,225,190,0.4)'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(0, 0, a.r * 0.93, Math.PI * 0.9, Math.PI * 1.6); ctx.stroke();
   ctx.restore();
 }
 
 function drawMissile(m) {
   const a = Math.atan2(m.vy, m.vx);
   ctx.save(); ctx.translate(sx(m.x), sy(m.y)); ctx.rotate(a);
-  ctx.fillStyle = '#e8e8e8';
+  ctx.shadowColor = '#ff7a4d'; ctx.shadowBlur = 12;
+  ctx.fillStyle = '#f2f2f2';
   ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(4, -4); ctx.lineTo(-8, -4); ctx.lineTo(-8, 4); ctx.lineTo(4, 4); ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0;
   ctx.fillStyle = '#ff5a5a'; ctx.fillRect(-8, -4, 4, 8);
   const fl = 8 + Math.random() * 8;
   const fg = ctx.createLinearGradient(-12, 0, -12 - fl, 0);
@@ -630,6 +693,11 @@ function drawMissile(m) {
 
 function drawUfo(u) {
   ctx.save(); ctx.translate(sx(u.x), sy(u.y));
+  // hover glow
+  const ug = ctx.createRadialGradient(0, 4, 2, 0, 4, 26);
+  ug.addColorStop(0, 'rgba(61,220,132,0.5)'); ug.addColorStop(1, 'rgba(61,220,132,0)');
+  ctx.fillStyle = ug;
+  ctx.beginPath(); ctx.arc(0, 4, 26, 0, TAU); ctx.fill();
   ctx.fillStyle = '#3ddc84';
   ctx.beginPath(); ctx.ellipse(0, 0, 18, 7, 0, 0, TAU); ctx.fill();
   ctx.fillStyle = '#9ff5c4';
@@ -667,6 +735,13 @@ function drawHole(h) {
   ctx.strokeStyle = 'rgba(190,150,255,0.7)'; ctx.lineWidth = 2;
   ctx.save(); ctx.rotate(h.t * 2);
   ctx.beginPath(); ctx.ellipse(0, 0, h.r * 1.5, h.r * 0.8, 0, 0, TAU); ctx.stroke();
+  ctx.restore();
+  // outer dashed accretion ring, counter-rotating
+  ctx.save(); ctx.rotate(-h.t * 1.2);
+  ctx.strokeStyle = 'rgba(255,170,220,0.35)'; ctx.lineWidth = 3;
+  ctx.setLineDash([10, 14]);
+  ctx.beginPath(); ctx.ellipse(0, 0, h.r * 2.1, h.r * 1.1, 0, 0, TAU); ctx.stroke();
+  ctx.setLineDash([]);
   ctx.restore(); ctx.restore();
 }
 
@@ -676,14 +751,35 @@ function drawPickup(p) {
   ctx.strokeStyle = d.color; ctx.lineWidth = 2.5;
   ctx.fillStyle = 'rgba(5,10,25,0.8)';
   ctx.beginPath(); ctx.arc(0, 0, p.r, 0, TAU); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = d.color;
-  ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(p.kind === 'H' ? '+' : p.kind, 0, 1);
+  // glow pulse
+  ctx.save();
+  ctx.shadowColor = d.color; ctx.shadowBlur = 14;
+  drawPickupIcon(p.kind, d.color);
+  ctx.restore();
   if (Math.floor(S.t * 3) % 2 === 0) {
     ctx.strokeStyle = d.color + '66';
     ctx.beginPath(); ctx.arc(0, 0, p.r + 5, 0, TAU); ctx.stroke();
   }
   ctx.restore();
+}
+
+function drawPickupIcon(kind, color) {
+  ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  if (kind === 'S') {                    // shield
+    ctx.moveTo(0, -8); ctx.lineTo(6, -5); ctx.lineTo(6, 1);
+    ctx.quadraticCurveTo(6, 6, 0, 9); ctx.quadraticCurveTo(-6, 6, -6, 1);
+    ctx.lineTo(-6, -5); ctx.closePath();
+  } else if (kind === 'H') {             // heart
+    ctx.moveTo(0, 8);
+    ctx.bezierCurveTo(-9, 1, -7, -7, 0, -3);
+    ctx.bezierCurveTo(7, -7, 9, 1, 0, 8);
+  } else {                               // clock (slow-mo)
+    ctx.arc(0, 0, 7, 0, TAU);
+    ctx.moveTo(0, 0); ctx.lineTo(0, -5);
+    ctx.moveTo(0, 0); ctx.lineTo(3.5, 1.5);
+  }
+  ctx.fill(); ctx.stroke();
 }
 
 function drawParts() {
@@ -705,6 +801,10 @@ function drawParts() {
       ctx.globalAlpha = k;
       ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(X - p.vx * 0.03, Y - p.vy * 0.03); ctx.stroke();
+    } else if (p.kind === 'ring') {
+      ctx.globalAlpha = k * 0.8;
+      ctx.strokeStyle = '#ffe9a8'; ctx.lineWidth = 3 * k + 1;
+      ctx.beginPath(); ctx.arc(X, Y, p.r * (1 - k * 0.85), 0, TAU); ctx.stroke();
     } else {
       ctx.globalAlpha = k * 0.35;
       ctx.fillStyle = '#9aa4b8';
@@ -747,7 +847,7 @@ function update(dt) {
   const tel = document.getElementById('timer');
   tel.textContent = Math.floor(remain / 60) + ':' + String(Math.floor(remain % 60)).padStart(2, '0');
   tel.classList.toggle('danger', remain <= 15);
-  updateHUD();
+  renderHearts();
 
   if (engineGain) engineGain.gain.value = S.muted ? 0 : 0.028 + diff() * 0.012;
 
@@ -823,7 +923,7 @@ function startRun() {
   document.getElementById('menu-best').textContent =
     S.best > 0 ? 'BEST ' + Math.floor(S.best) + ' m · ' + fmtTime(S.bestTime) : '';
   document.getElementById('best').textContent = 'BEST ' + Math.floor(S.best) + ' m';
-  updateHUD();
+  renderHearts();
   banner('SURVIVE 2:00', '#8fb8ff', 'HOLD LEFT / RIGHT TO STEER');
   showSteerHint(true);
   setTimeout(() => showSteerHint(false), 6000);
@@ -886,6 +986,20 @@ document.getElementById('btn-menu').addEventListener('click', toMenu);
 document.getElementById('btn-pause').addEventListener('click', () => togglePause());
 document.getElementById('btn-mute').addEventListener('click', () => { ensureAudio(); toggleMute(); });
 document.getElementById('btn-mute').style.opacity = S.muted ? 0.4 : 1;
+
+function paintDiff() {
+  document.querySelectorAll('.diff-btn').forEach(b =>
+    b.classList.toggle('selected', b.dataset.diff === S.diff));
+  document.getElementById('diff-note').textContent = DIFFS[S.diff].note;
+}
+document.querySelectorAll('.diff-btn').forEach(b =>
+  b.addEventListener('click', () => {
+    S.diff = b.dataset.diff;
+    localStorage.setItem('missileio_diff', S.diff);
+    ensureAudio(); tone(600, 0.08, 'square', 0.08);
+    paintDiff();
+  }));
+paintDiff();
 
 toMenu();
 S.last = performance.now();
