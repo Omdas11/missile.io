@@ -44,6 +44,7 @@
   <!-- Main menu -->
   <div id="menu" class="overlay">
     <div class="panel">
+      <div id="auth-area"></div>
       <h1 class="logo">MISSILE<span>.IO</span></h1>
       <p class="tagline">Your rocket never stops. Survive 2 minutes in space.</p>
       <div class="how">
@@ -70,6 +71,11 @@
       </div>
       <button id="btn-start" class="big-btn">LAUNCH</button>
       <div id="menu-best" class="best-line"></div>
+
+      <div class="board-wrap">
+        <div class="board-head"><span>TOP PILOTS</span><button id="btn-refresh-board" class="mini-btn" title="Refresh">&#8635;</button></div>
+        <div id="board-list"><div class="board-empty">Loading…</div></div>
+      </div>
     </div>
   </div>
 
@@ -94,11 +100,18 @@
         <div><span>DODGED</span><b id="final-downed">0</b></div>
       </div>
       <div id="newbest" class="hidden">NEW BEST!</div>
+      <div id="rank-line" class="rank-line hidden"></div>
       <button id="btn-retry" class="big-btn">FLY AGAIN</button>
       <button id="btn-menu" class="ghost-btn">MENU</button>
     </div>
   </div>
+  <div id="toast" class="hidden"></div>
 </div>
 <script src="game.js"></script>
+<script type="module">
+import { Client, Account, TablesDB, Query, ID } from 'https://cdn.jsdelivr.net/npm/appwrite@29.0.0/dist/esm/sdk.js';
+window.Appwrite = { Client, Account, TablesDB, Query, ID };
+if (typeof initBackend === 'function') initBackend();
+</script>
 </body>
 </html>

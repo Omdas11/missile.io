@@ -1120,6 +1120,7 @@ function endRun(won) {
   document.getElementById('final-downed').textContent = S.dodged;
   document.getElementById('newbest').classList.toggle('hidden', !isBest);
   if (won) { sfx.win(); banner('2:00 — SURVIVED!', '#7ee2a8'); }
+  handleSubmit();
 }
 function setPause(on) {
   if (S.mode !== 'play' && S.mode !== 'pause') return;
@@ -1138,6 +1139,160 @@ function toMenu() {
   document.getElementById('menu-best').textContent =
     S.scoreBest > 0 ? 'BEST ' + S.scoreBest + ' · ' + fmtTime(S.bestTime) : 'NO FLIGHTS YET';
   if (engineGain) engineGain.gain.value = 0;
+  loadBoard();
+}
+
+/* ================= backend: Google sign-in + leaderboard ================= */
+const AW = { ready: false, user: null, board: [], submitting: false };
+const AW_ENDPOINT = 'https://sgp.cloud.appwrite.io/v1';
+const AW_PROJECT = '69a3e59300172d6a19cf';
+const AW_DB = 'missileio', AW_TABLE = 'leaderboard';
+const GAME_URL = 'https://omdas11.github.io/missile.io/';
+
+function initBackend() {
+  AW.tried = true;
+  if (AW.ready || !window.Appwrite) { paintAuth(); loadBoard(); return; }
+  try {
+    const { Client, Account, TablesDB, Query, ID } = window.Appwrite;
+    AW.client = new Client().setEndpoint(AW_ENDPOINT).setProject(AW_PROJECT);
+    AW.account = new Account(AW.client);
+    AW.db = new TablesDB(AW.client);
+    AW.Query = Query; AW.ID = ID;
+    AW.ready = true;
+  } catch (e) { AW.ready = false; }
+  if (location.search.includes('auth=fail')) toast('Google sign-in failed — try again');
+  refreshAuth();
+}
+
+async function refreshAuth() {
+  if (AW.ready) {
+    try { AW.user = await AW.account.get(); }
+    catch (e) { AW.user = null; }
+  }
+  paintAuth();
+  loadBoard();
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+const G_LOGO = '<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.3-2.3H12v4.5h6.5c-.1 1.1-.8 2.7-2.4 3.8l-.1.1 3.5 2.7.1.1c2.2-2 3.9-5 3.9-8.9z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.8-2.9c-1 .7-2.4 1.2-4.1 1.2-3.1 0-5.8-2.1-6.8-5l-.1.1-3.7 2.9v.1C3.5 21.3 7.4 24 12 24z"/><path fill="#FBBC05" d="M5.2 14.4c-.2-.7-.4-1.5-.4-2.4s.1-1.7.4-2.4l-.1-.1-3.7-2.9-.1.1C.5 8.2 0 10 0 12s.5 3.8 1.3 5.4l3.9-3z"/><path fill="#EA4335" d="M12 4.7c1.8 0 3 .8 3.7 1.4l3.3-3.2C17.9 1.1 15.2 0 12 0 7.4 0 3.5 2.7 1.3 6.6l3.9 3c1-2.9 3.7-4.9 6.8-4.9z"/></svg>';
+
+function paintAuth() {
+  const el = document.getElementById('auth-area');
+  if (!el) return;
+  if (!AW.ready) { el.innerHTML = ''; return; }
+  if (AW.user) {
+    const av = AW_ENDPOINT + '/avatars/initials?name=' + encodeURIComponent(AW.user.name || 'P') +
+      '&project=' + AW_PROJECT + '&width=96&height=96';
+    el.innerHTML =
+      '<div class="user-chip"><img src="' + av + '" alt=""><span>' + esc(AW.user.name || 'Pilot') + '</span>' +
+      '<button id="btn-signout" class="mini-btn">Sign out</button></div>';
+    document.getElementById('btn-signout').addEventListener('click', signOut);
+  } else {
+    el.innerHTML = '<button id="btn-signin" class="g-btn">' + G_LOGO + 'Sign in with Google</button>';
+    document.getElementById('btn-signin').addEventListener('click', signInGoogle);
+  }
+}
+
+function signInGoogle() {
+  if (!AW.ready) { toast('Leaderboard is offline right now'); return; }
+  AW.account.createOAuth2Session({ provider: 'google', success: GAME_URL, failure: GAME_URL + '?auth=fail' });
+}
+
+async function signOut() {
+  try { await AW.account.deleteSession('current'); } catch (e) {}
+  AW.user = null;
+  paintAuth(); loadBoard();
+  toast('Signed out');
+}
+
+async function loadBoard() {
+  const el = document.getElementById('board-list');
+  if (!el) return;
+  if (!AW.ready) {
+    el.innerHTML = '<div class="board-empty">' +
+      (AW.tried ? 'Leaderboard is offline — check your connection.' : 'Loading…') + '</div>';
+    return;
+  }
+  try {
+    const res = await AW.db.listRows(AW_DB, AW_TABLE, [AW.Query.orderDesc('score'), AW.Query.limit(60)]);
+    const best = new Map();
+    for (const r of res.rows || []) {
+      const cur = best.get(r.userId);
+      if (!cur || r.score > cur.score) best.set(r.userId, r);
+    }
+    AW.board = [...best.values()].sort((a, b) => b.score - a.score).slice(0, 10);
+  } catch (e) { AW.board = []; }
+  paintBoard();
+}
+
+function paintBoard() {
+  const el = document.getElementById('board-list');
+  if (!AW.board.length) {
+    el.innerHTML = '<div class="board-empty">' +
+      (AW.user ? 'No scores yet — be the first pilot on the board!' : 'Sign in with Google to enter the leaderboard.') +
+      '</div>';
+    return;
+  }
+  el.innerHTML = AW.board.map((r, i) => {
+    const me = AW.user && r.userId === AW.user.$id;
+    const rc = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
+    return '<div class="board-row' + (me ? ' me' : '') + '">' +
+      '<span class="rank ' + rc + '">' + (i + 1) + '</span>' +
+      (r.avatar ? '<img class="avatar" src="' + esc(r.avatar) + '" alt="" loading="lazy">' : '') +
+      '<span class="pname">' + esc(r.name || 'Pilot') + '</span>' +
+      (r.difficulty ? '<span class="pdiff">' + esc(String(r.difficulty).toUpperCase()) + '</span>' : '') +
+      '<span class="pscore">' + r.score + '</span></div>';
+  }).join('');
+}
+
+async function submitScore() {
+  if (!AW.ready || !AW.user || S.score <= 0 || AW.submitting) return 'skip';
+  AW.submitting = true;
+  try {
+    await AW.db.createRow(AW_DB, AW_TABLE, AW.ID.unique(), {
+      userId: AW.user.$id,
+      name: AW.user.name || 'Pilot',
+      avatar: AW_ENDPOINT + '/avatars/initials?name=' + encodeURIComponent(AW.user.name || 'P') +
+        '&project=' + AW_PROJECT + '&width=96&height=96',
+      score: S.score,
+      difficulty: S.diff,
+      duration: Math.round(Math.min(S.t, DURATION) * 10) / 10,
+      createdAt: new Date().toISOString(),
+    });
+    await loadBoard();
+    const rank = AW.board.findIndex(r => r.userId === AW.user.$id);
+    return rank >= 0 ? rank + 1 : null;
+  } catch (e) { return 'error'; }
+  finally { AW.submitting = false; }
+}
+
+async function handleSubmit() {
+  const rankEl = document.getElementById('rank-line');
+  rankEl.classList.add('hidden');
+  if (!AW.ready) return;
+  if (!AW.user) {
+    rankEl.textContent = 'Sign in with Google to enter the leaderboard';
+    rankEl.classList.remove('hidden');
+    return;
+  }
+  if (S.score <= 0) return;
+  rankEl.textContent = 'Submitting score…';
+  rankEl.classList.remove('hidden');
+  const rank = await submitScore();
+  if (rank === 'error') rankEl.textContent = 'Could not submit — offline?';
+  else if (typeof rank === 'number') rankEl.textContent = 'RANK #' + rank + ' ON THE LEADERBOARD';
+  else rankEl.classList.add('hidden');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.add('hidden'), 2600);
 }
 
 document.getElementById('btn-start').addEventListener('click', startRun);
@@ -1145,6 +1300,7 @@ document.getElementById('btn-retry').addEventListener('click', startRun);
 document.getElementById('btn-resume').addEventListener('click', () => setPause(false));
 document.getElementById('btn-quit').addEventListener('click', toMenu);
 document.getElementById('btn-menu').addEventListener('click', toMenu);
+document.getElementById('btn-refresh-board').addEventListener('click', () => { loadBoard(); toast('Leaderboard refreshed'); });
 document.getElementById('btn-pause').addEventListener('click', () => togglePause());
 document.getElementById('btn-mute').addEventListener('click', () => { ensureAudio(); toggleMute(); });
 document.getElementById('btn-mute').style.opacity = S.muted ? 0.4 : 1;

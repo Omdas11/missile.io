@@ -118,6 +118,63 @@ body {
 }
 .ghost-btn:active { transform:scale(.97); }
 .best-line { margin-top:14px; font-size:13px; letter-spacing:3px; opacity:.65; }
+
+/* ---------- auth ---------- */
+#auth-area { display:flex; justify-content:center; margin-bottom:14px; min-height:44px; }
+.g-btn {
+  display:inline-flex; align-items:center; gap:10px; padding:10px 18px; border-radius:24px;
+  background:#fff; color:#1f2937; border:1px solid rgba(0,0,0,.12); cursor:pointer;
+  font-size:14px; font-weight:600; letter-spacing:.3px; box-shadow:0 4px 16px rgba(0,0,0,.35);
+}
+.g-btn:active { transform:scale(.97); }
+.g-btn svg { width:18px; height:18px; }
+.user-chip {
+  display:inline-flex; align-items:center; gap:10px; padding:6px 8px 6px 6px; border-radius:24px;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16);
+}
+.user-chip img { width:32px; height:32px; border-radius:50%; }
+.user-chip span { font-size:14px; font-weight:600; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mini-btn {
+  border:1px solid rgba(160,190,255,.35); background:rgba(255,255,255,.06); color:#cfe0ff;
+  border-radius:8px; padding:4px 10px; font-size:12px; cursor:pointer;
+}
+.mini-btn:active { transform:scale(.94); }
+
+/* ---------- leaderboard ---------- */
+.board-wrap {
+  margin-top:18px; text-align:left; background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:12px 14px;
+}
+.board-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.board-head span { font-size:12px; font-weight:800; letter-spacing:3px; opacity:.75; }
+#board-list { display:flex; flex-direction:column; gap:4px; max-height:264px; overflow-y:auto; }
+.board-empty { font-size:13px; opacity:.6; padding:8px 2px; line-height:1.5; }
+.board-row {
+  display:flex; align-items:center; gap:10px; padding:6px 8px; border-radius:10px;
+  background:rgba(255,255,255,.03); font-size:14px;
+}
+.board-row.me { background:rgba(126,226,168,.12); border:1px solid rgba(126,226,168,.4); }
+.board-row .rank { width:26px; font-weight:900; opacity:.85; font-variant-numeric:tabular-nums; }
+.board-row .rank.r1 { color:#ffd76a; } .board-row .rank.r2 { color:#d7dee9; } .board-row .rank.r3 { color:#f0a35e; }
+.board-row img.avatar { width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,.1); }
+.board-row .pname { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+.board-row .pscore { font-weight:800; font-variant-numeric:tabular-nums; }
+.board-row .pdiff {
+  font-size:10px; font-weight:800; letter-spacing:1px; padding:2px 7px; border-radius:12px;
+  background:rgba(143,184,255,.15); color:#9dc0ff;
+}
+.rank-line {
+  font-size:15px; font-weight:900; letter-spacing:3px; color:#7ee2a8; margin-bottom:12px;
+  text-shadow:0 0 16px rgba(126,226,168,.5);
+}
+
+/* ---------- toast ---------- */
+#toast {
+  position:absolute; bottom:26px; left:50%; transform:translateX(-50%); z-index:30;
+  background:rgba(10,16,32,.92); border:1px solid rgba(160,190,255,.4); color:#e8f0ff;
+  padding:10px 18px; border-radius:24px; font-size:14px; white-space:nowrap;
+  box-shadow:0 6px 24px rgba(0,0,0,.5); animation:pop .25s ease;
+}
 .panel h2 { font-size:34px; letter-spacing:6px; margin-bottom:18px; }
 .panel h2.dead { color:#ff6b6b; text-shadow:0 0 26px rgba(255,60,60,.5); }
 .stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }

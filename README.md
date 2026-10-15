@@ -25,6 +25,11 @@ The rocket **always flies forward** — like the real 2 Minutes in Space, holdin
 - **Graphics settings:** LOW / MED / HIGH on the menu (render scale, glow effects, starfield density, particles) plus an FPS meter toggle, for weaker machines.
 - Difficulty ramps the whole flight — the last 10 seconds are a missile storm.
 - Best score and best time are saved locally in the browser.
+- **Online leaderboard:** sign in with Google (top of the menu) to submit your scores to the global TOP PILOTS leaderboard, powered by Appwrite.
+
+## Backend
+
+Scores live in the `missileio` database / `leaderboard` table of the shared Appwrite project (`sgp.cloud.appwrite.io`), alongside the ExamArchive backend — Google OAuth was already enabled there, and the game is registered as a web platform for `omdas11.github.io`. Table permissions are public-read, authenticated-create; the client keeps each pilot's best score.
 
 ## Files
 
