@@ -2,9 +2,9 @@
 
 A **2-minutes-in-space** style HTML5 survival game: your rocket auto-flies upward — steer, dodge everything, and **survive the full 2:00 to win.**
 
-Play it: https://missileio.vercel.app/ (Vercel — also mirrored on GitHub Pages)
+Play it: https://missileio.vercel.app/ (Vercel)
 
-No build step, no dependencies — just open `index.html` or serve the folder.
+Built with **Next.js** (static export). Run `npm install && npm run dev` to hack on it, `npm run build` to verify the export.
 
 ## How to play
 

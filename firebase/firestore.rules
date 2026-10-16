@@ -17,6 +17,8 @@ service cloud.firestore {
     // The score must be earnable in the wall-clock time since the run
     // started: at most 100 pts/sec (above the game's theoretical max of
     // ~89 pts/sec), so faking a score takes as long as earning it.
+    // (The cap is expressed as duration <= duration with the x100 folded
+    // into the integer side: duration * number is not valid in rules.)
     match /leaderboard/{runId} {
       allow read: if true;
       allow create: if request.auth != null
@@ -26,8 +28,8 @@ service cloud.firestore {
         && request.resource.data.score >= 0
         && exists(/databases/$(database)/documents/runs/$(runId))
         && get(/databases/$(database)/documents/runs/$(runId)).data.uid == request.auth.uid
-        && duration.value(request.resource.data.score, 's')
-           <= (request.time - get(/databases/$(database)/documents/runs/$(runId)).data.startedAt) * 100.0;
+        && duration.value(request.resource.data.score * 100, 's')
+             <= (request.time - get(/databases/$(database)/documents/runs/$(runId)).data.startedAt);
       allow update, delete: if false;
     }
   }
