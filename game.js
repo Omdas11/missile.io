@@ -1181,7 +1181,7 @@ function initBackend() {
     FB.auth = F.getAuth(FB.app);
     FB.db = F.getFirestore(FB.app);
     FB.ready = true;
-    // surface redirect errors (provider not enabled, unauthorized domain, …)
+    // redirect flow is only the popup-blocked fallback now; still surface its errors
     F.getRedirectResult(FB.auth).catch(err => {
       if (err && err.code && err.code !== 'auth/no-auth-event')
         toast('Google sign-in failed: ' + friendlyAuthError(err.code));
@@ -1234,8 +1234,18 @@ function paintAuth() {
 function signInGoogle() {
   if (!FB.ready) { toast('Leaderboard is offline right now'); return; }
   const provider = new FB.F.GoogleAuthProvider();
-  FB.F.signInWithRedirect(FB.auth, provider).catch(err => {
-    toast('Google sign-in failed: ' + friendlyAuthError(err.code));
+  // Popup first: the game page never unloads, so the sign-in can't get lost
+  // if the phone kills the background tab mid-flow (the redirect flow's
+  // handshake lives in sessionStorage and dies with the tab).
+  FB.F.signInWithPopup(FB.auth, provider).catch(err => {
+    if (err.code === 'auth/popup-blocked') {
+      // Fall back to redirect; getRedirectResult() in initBackend picks it up.
+      FB.F.signInWithRedirect(FB.auth, provider).catch(e2 => {
+        toast('Google sign-in failed: ' + friendlyAuthError(e2.code));
+      });
+    } else if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+      toast('Google sign-in failed: ' + friendlyAuthError(err.code));
+    }
   });
 }
 
