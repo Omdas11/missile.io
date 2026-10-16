@@ -2,7 +2,7 @@
 
 A **2-minutes-in-space** style HTML5 survival game: your rocket auto-flies upward — steer, dodge everything, and **survive the full 2:00 to win.**
 
-Play it: https://omdas11.github.io/missile.io/ (GitHub Pages)
+Play it: https://missileio.vercel.app/ (Vercel — also mirrored on GitHub Pages)
 
 No build step, no dependencies — just open `index.html` or serve the folder.
 
